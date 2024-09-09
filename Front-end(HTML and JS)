@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Text Extraction Tool</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: #ffffff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 600px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 28px;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-size: 16px;
+      font-weight: bold;
+      color: #555;
+      display: block;
+      margin: 15px 0 5px;
+      text-align: left;
+    }
+
+    textarea, input[type="file"] {
+      width: calc(100% - 20px);
+      padding: 12px;
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+      background-color: #fafafa;
+    }
+
+    textarea:focus, input[type="file"]:focus {
+      border-color: #007bff;
+      outline: none;
+    }
+
+    #generate {
+      background-color: #007bff;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+      margin-top: 10px;
+    }
+
+    #generate:hover {
+      background-color: #0056b3;
+    }
+
+    #loading {
+      display: none;
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 16px;
+      color: #007bff;
+    }
+
+    #output {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #fff;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+      min-height: 60px;
+      text-align: left;
+      font-size: 14px;
+      color: #333;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Extract Text from Image</h1>
+
+    <label for="context">Optional Context:</label>
+    <textarea id="context" rows="4" placeholder="Enter any context..."></textarea>
+
+    <label for="screenshots">Upload Image:</label>
+    <input type="file" id="screenshots" accept="image/*">
+
+    <button id="generate">Extract Text</button>
+
+    <div id="loading">Processing...</div>
+    <div id="output"></div>
+  </div>
+
+  <script>
+    document.getElementById("generate").addEventListener("click", function() {
+      let context = document.getElementById("context").value;
+      let fileInput = document.getElementById("screenshots");
+      let file = fileInput.files[0];
+      
+      if (!file) {
+        alert("Please upload an image.");
+        return;
+      }
+
+      let formData = new FormData();
+      formData.append("image", file);
+      if (context) {
+        formData.append("context", context);
+      }
+
+      document.getElementById("loading").style.display = 'block';
+
+      fetch('http://127.0.0.1:5000/api/extract-text', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        let outputDiv = document.getElementById("output");
+        let loadingDiv = document.getElementById("loading");
+        loadingDiv.style.display = 'none';
+        outputDiv.style.display = 'block';
+        outputDiv.innerHTML = '';
+        
+        if (data.error) {
+          outputDiv.innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+        } else {
+          outputDiv.innerHTML = `<p><strong>Extracted Text:</strong></p><p>${data.extracted_text}</p><p><strong>Summary:</strong></p><p>${data.summary}</p>`;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById("loading").style.display = 'none';
+        document.getElementById("output").innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+      });
+    });
+  </script>
+</body>
+</html>
